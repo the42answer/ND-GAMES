@@ -6,6 +6,8 @@ Created on Sat Mar  7 19:48:07 2020
 @author: mike
 """
 
+from ngrid import NGrid
+
 import itertools as it
 import random
 
@@ -27,7 +29,7 @@ class Tile():
             out = '@' if self.visibility == 2 else '#'
         return f'{out: ^{width}}'
 
-class Board:
+class Board(NGrid):
     """ An n-dimensional minesweeper board. """
     
     def __init__(self, size, max_adj, mine_frac):
@@ -36,50 +38,28 @@ class Board:
         self.max_adj = max_adj
         
         # Determine number of squares
-        self.length = 1
-        for dim in size: self.length *= dim
+        length = 1
+        for dim in size: length *= dim
         
         # Create board
-        self.board = []
-        for i in range(self.length):
-            self.board.append(Tile(random.random()<mine_frac, 0))
+        board = []
+        for i in range(length):
+            board.append(Tile(random.random()<mine_frac, 0))
+        
+        # Initialise the NGrid superclass
+        super().__init__(size, board)
         
         # Initialise offsets
         self.offsets = self.get_offsets()
         
         # Set neighbours
-        for i in range(self.length):
+        for i in range(len(self)):
             neighbours = self.get_neighbours(self.from_linear(i))
             for neighbour in neighbours:
-                neighbour = self.board[self.to_linear(neighbour)]
-                self.board[i].neighbours.append(neighbour)
+                neighbour = self[neighbour]
+                self[i].neighbours.append(neighbour)
                 if neighbour.is_mine:
-                    self.board[i].mines += 1
-       
-        
-    def to_linear(self, coord):
-        """ The n-dimensional board is stored as a 1-dimensional array
-            whose length is the product of the size in each dimension.
-            This function converts an n-dimensional coordinate to a
-            position on this array.
-            """
-            
-        index = 0
-        multiplier = 1
-        for dim in range(len(self.size)):
-            index += coord[dim] * multiplier
-            multiplier *= self.size[dim]
-        return index
-    
-    
-    def from_linear(self, index):
-        """ Converts an internal array index to an n-dimensional coordinate. """
-        
-        coord = []
-        for dim in range(len(self.size)):
-            coord.append(index % self.size[dim])
-            index //= self.size[dim]
-        return tuple(coord)
+                    self[i].mines += 1
     
     
     def get_offsets(self):
@@ -147,7 +127,7 @@ class Board:
                     
                     self.print_row(
                             adj_size,
-                            lambda w, y: self.board[self.to_linear((other_coord+(w,)+(x,)+(y,)+(z,))[-len(self.size):])].__str__(width),
+                            lambda w, y: self[(other_coord+(w,)+(x,)+(y,)+(z,))[-len(self.size):]].__str__(width),
                             f'x={x: <{width}} z={z: <{width}}',
                             ' | ', ' | ', ' '
                          )
@@ -185,7 +165,7 @@ class Board:
         
         # If the updated tiles are not specified, assume that they may all be updated
         if update is None:
-            update = set(self.board)
+            update = set(self)
         else:
             update = set(update)
         
@@ -205,26 +185,11 @@ class Board:
                             update_next.add(neighbour)
                             
             update = update_next
-
-
-    def __getitem__(self, key):
-        """ Allow this class to be indexed.
-            Integers and slices can be used like regular lists,
-            and iterables can be used to specify n-dimensional coordinates.
-            """
-            
-        try:
-            # Handle iterables as n-dimensional coordinates
-            t_key = tuple(key)
-            return self.board[self.to_linear(t_key)]
-        except TypeError:
-            # Leave anything else to the normal list __getitem__
-            return self.board[key]
         
         
     def is_won(self):
         """ Check if all non-mine squares are cleared. """
-        for tile in self.board:
+        for tile in self:
             if not tile.is_mine and tile.visibility != 1:
                 return False
         return True
@@ -307,8 +272,8 @@ def play():
         board[move].visibility = True
         board.sweep()
     
-    for i in range(len(board.board)):
-        board.board[i].visibility = 1
+    for i in range(len(board)):
+        board[i].visibility = 1
         
     board.print_nd()
 
