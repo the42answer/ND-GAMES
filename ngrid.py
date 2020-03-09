@@ -82,23 +82,23 @@ class NGrid:
             Each 4d grid is a 2d grid of 2d grids.
             """
         
-        adj_size = (1,) * (4 - len(self.size)) + self.size 
+        adj_size = self.size  + (1,) * (4 - len(self.size))
         
         
-        for other_coord in it.product(*map(range,adj_size[:-4])):
+        for other_coord in it.product(*map(range,adj_size[4:])):
             
             print(f'Showing coordinates {other_coord} + (*,*,*,*):')
             
             self.print_row_coord(adj_size, width)
             self.print_row_sep(adj_size, width)
             
-            for x in range(adj_size[-3]):
-                for z in range(adj_size[-1]):
+            for w in range(adj_size[3]):
+                for y in range(adj_size[1]):
                     
                     self.print_row(
                             adj_size,
-                            lambda w, y: func(self[(other_coord+(w,)+(x,)+(y,)+(z,))[-len(self.size):]], width),
-                            f'x={x: <{width}} z={z: <{width}}',
+                            lambda z, x: func(self[((z,)+(y,)+(x,)+(w,))[:len(self.size)] + other_coord], width),
+                            f'w={w: <{width}} y={y: <{width}}',
                             ' | ', ' | ', ' '
                          )
                     
@@ -106,22 +106,22 @@ class NGrid:
             print()
             
           
-    def print_row(self, size, func, start, border, w_sep, y_sep):
+    def print_row(self, size, func, start, border, z_sep, x_sep):
         print(end=f'{start}{border}')
-        for w in range(size[-4]):
-            if w > 0:
-                print(end=w_sep)
-            for y in range(size[-2]):
-                if y > 0:
-                    print(end=y_sep)
-                print(end=func(w,y))
+        for x in range(size[2]):
+            if x > 0:
+                print(end=z_sep)
+            for z in range(size[0]):
+                if z > 0:
+                    print(end=x_sep)
+                print(end=func(z,x))
         print(border)
         
         
     def print_row_coord(self, size, width):
-        self.print_row(size, lambda w, y: f'{w: ^{width}}', f'{"w -> ": <{2*width + 5}}', ' . ', ' . ', ' ')
-        self.print_row(size, lambda w, y: f'{y: ^{width}}', f'{"y -> ": <{2*width + 5}}', ' | ', ' | ', ' ')
+        self.print_row(size, lambda z, x: f'{z: ^{width}}', f'{"w -> ": <{2*width + 5}}', ' . ', ' . ', ' ')
+        self.print_row(size, lambda z, x: f'{x: ^{width}}', f'{"y -> ": <{2*width + 5}}', ' | ', ' | ', ' ')
         
         
     def print_row_sep(self, size, width):
-        self.print_row(size, lambda w, y: '-'*width, '-' * (2*width + 5), ' + ', ' + ', '-')
+        self.print_row(size, lambda z, x: '-'*width, '-' * (2*width + 5), ' + ', ' + ', '-')
