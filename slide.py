@@ -9,6 +9,7 @@ Created on Mon Mar  9 15:23:00 2020
 from ngrid import NGrid
 import random
 import itertools as it
+from boundedinput import read_tuple, read_int, read_float
 
 class Board(NGrid):
     
@@ -24,8 +25,11 @@ class Board(NGrid):
     
     def add_numbers_simple(self):
         amount = random.choice((1,1,2))
-        for i in range(amount):
-            self[random.randrange(0,len(self))] = random.choice((2,2,4))
+        while amount > 0:
+            index = random.randrange(0,len(self))
+            if self[index] == 0:
+                self[index] = random.choice((2,2,4))
+                amount -= 1
             
             
     def move(self, dimension, increase):
@@ -33,7 +37,7 @@ class Board(NGrid):
         for column in it.product(*map(range, self.size[:dimension]), (0,), *map(range, self.size[dimension+1:])):
             print(column)
             
-            if increase:
+            if not increase:
                 start = 0
                 offset = 1
                 end = self.size[dimension] - 1
@@ -50,25 +54,45 @@ class Board(NGrid):
                 current[dimension] += offset
                 if self[current] == 0:
                     continue
-                if self[last] == 0 or self[current] == self[last]:
+                if not (self[last] == 0 or self[current] == self[last]):
+                    last[dimension] += offset
+                if last != current:
+                    combined = self[last] != 0
                     self[last] += self[current]
                     self[current] = 0
-                    continue
-                last[dimension] += offset
+                    if combined:
+                        last[dimension] += offset
                 
                 
     def print_(self):
         
-        self.print_nd(lambda t, w: f'{t: ^{w}}', 2)
-                
+        self.print_nd(lambda t, w: f'{"." if t==0 else t: ^{w}}', 2)
+ 
 
-b = Board((3,4,2))
-b.print_()
-b.add_numbers()
-b.print_()
+def play():
+    
+    size = read_tuple(floor=0, prompt="Enter the board's dimensions:\n >>> ")    
+    board = Board(size)
+    
+    while True:
+        
+        board.add_numbers()
+        board.print_()
+        
+        move = read_int('Enter a move:\n >>> ', floor=-len(board.size), ceil=len(board.size))
+        
+        # Pass move
+        if move == 0:
+            continue
+        
+        move = (abs(move) - 1, move > 0)
+        
+        board.move(*move)
+        board.print_()
 
 
-
+if __name__ == '__main__':
+    play()               
 
 
 
