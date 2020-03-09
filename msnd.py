@@ -196,54 +196,72 @@ class Board(NGrid):
 
 
 
-def read_tuple(size=None, floor=None, ceil=None, prompt=''):
+def read_float(prompt='', floor=None, ceil=None, repeat=True):
+    """ Reads a float within specified bounds. """
+    
+    while True:
+    
+        try:
+            result = float(input(prompt))
+            if floor is not None and result < floor:
+                raise ValueError(f'Number must be no less than {floor}.')
+            if ceil is not None and result > ceil:
+                raise ValueError(f'Number must be no greater than {ceil}.')
+        except ValueError as e:
+            print(e)
+            result = None
+            
+        if result is not None or not repeat:
+            return result
+
+
+
+def read_tuple(prompt='', size=None, floor=None, ceil=None, repeat=True):
     """ Reads a user speficied tuple with some validation. """
     
-    try:
-        result = tuple(map(int, input(prompt).split()))
-        print(result)
-    except TypeError or ValueError:
-        print('Malformed expression.\nEnter numbers separated by spaces only.')
-        return
-    
-    try:
-        t_floor = tuple(floor)
-        if len(floor) != len(result):
-            print(f'Tuple must be length {len(t_floor)} not {len(result)}.')
-            return
-        for i in range(len(result)):
-            if t_floor[i] > result[i]:
-                print(f'Tuple must be no less than {t_floor} elementwise.')
-                return
-    except TypeError or ValueError:
-        if floor is not None:
-            for elem in result:
-                if floor > elem:
-                    print(f'Tuple must be no less than {floor} elementwise.')
-                    return
-                
-    try:
-        t_ceil = tuple(ceil)
-        if len(ceil) != len(result):
-            print(f'Tuple must be length {len(t_ceil)} not {len(result)}.')
-            return
-        for i in range(len(result)):
-            if t_ceil[i] < result[i]:
-                print(f'Tuple must be no greater than {t_ceil} elementwise.')
-                return
-    except TypeError or ValueError:
-        if ceil is not None:
-            for elem in result:
-                if ceil < elem:
-                    print(f'Tuple must be no greater than {floor} elementwise.')
-                    return
-    
-    if size is not None and size != len(result):
-        print(f'Tuple must be length {size} not {len(result)}.')
-        return
+    while True:
         
-    return result
+        try:
+            result = tuple(map(int, input(prompt).split()))
+            print(result)
             
+            try:
+                t_floor = tuple(floor)
+                if len(floor) != len(result):
+                    raise ValueError(f'Tuple must be length {len(t_floor)} not {len(result)}.')
+                for i in range(len(result)):
+                    if t_floor[i] > result[i]:
+                        raise ValueError(f'Tuple must be no less than {t_floor} elementwise.')
+            except (TypeError, ValueError):
+                if floor is not None:
+                    for elem in result:
+                        if floor > elem:
+                            raise ValueError(f'Tuple must be no less than {floor} elementwise.')
+                        
+            try:
+                t_ceil = tuple(ceil)
+                if len(ceil) != len(result):
+                    raise ValueError(f'Tuple must be length {len(t_ceil)} not {len(result)}.')
+                for i in range(len(result)):
+                    if t_ceil[i] < result[i]:
+                        raise ValueError(f'Tuple must be no greater than {t_ceil} elementwise.')
+            except (TypeError, ValueError):
+                if ceil is not None:
+                    for elem in result:
+                        if ceil < elem:
+                            raise ValueError(f'Tuple must be no greater than {floor} elementwise.')
+            
+            if size is not None and size != len(result):
+                raise ValueError(f'Tuple must be length {size} not {len(result)}.')
+            
+        except (TypeError, ValueError) as e:
+            print(e)
+            result = None
+            
+        if result is not None or not repeat:
+            return result
+        
+                            
             
 
 # TODO make this user friendly
@@ -252,7 +270,11 @@ def play():
     size = read_tuple(floor=0, prompt="Enter the board's dimensions:\n >>> ")
     upper_bound = tuple(map(lambda x: x-1, size))
     
-    board = Board(size, 100, 0.1)
+    adjacency = read_tuple(size=1, floor=1, prompt="Enter offset limit:\n >>> ")[0]
+    
+    mine_frac = read_float(floor=0, ceil=1, prompt="Enter the mine fraction:\n >>> ")
+    
+    board = Board(size, adjacency, mine_frac)
     
     while True:
         
@@ -263,7 +285,6 @@ def play():
             break
         
         move = read_tuple(floor=0, ceil=upper_bound, prompt='Enter a move:\n >>> ')
-        if move is None: continue
     
         if board[move].is_mine:
             print('You lose')
