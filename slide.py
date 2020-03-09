@@ -35,7 +35,6 @@ class Board(NGrid):
     def move(self, dimension, increase):
         
         for column in it.product(*map(range, self.size[:dimension]), (0,), *map(range, self.size[dimension+1:])):
-            print(column)
             
             if not increase:
                 start = 0
@@ -88,8 +87,7 @@ def play():
         move = (abs(move) - 1, move > 0)
         
         board.move(*move)
-        board.print_()
-
+        
 
 if __name__ == '__main__':
     play()               
