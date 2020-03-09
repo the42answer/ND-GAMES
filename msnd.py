@@ -10,7 +10,8 @@ from ngrid import NGrid
 
 import itertools as it
 import random
-from boundedinput import read_tuple, read_int, read_float
+from boundedinput import read_tuple, select_one, read_int, read_float
+from editdefaults import fill
 
 class Tile():
     """ A structure representing a single tile, and useful information about it. """
@@ -25,7 +26,10 @@ class Tile():
         """ Print the tile in a useful format. """
         
         if self.visibility == 1:
-            out = '!' if self.is_mine else self.mines
+            if self.is_mine:
+                out = '!'
+            else:
+                out = '.' if self.mines == 0 else self.mines
         else:
             out = '@' if self.visibility == 2 else '#'
         return f'{out: ^{width}}'
@@ -33,10 +37,10 @@ class Tile():
 class Board(NGrid):
     """ An n-dimensional minesweeper board. """
     
-    def __init__(self, size, max_adj, mine_frac):
+    def __init__(self, size, adjacency, mine_frac):
         
         self.size = size
-        self.max_adj = max_adj
+        self.adjacency = adjacency
         
         # Determine number of squares
         length = 1
@@ -53,7 +57,15 @@ class Board(NGrid):
         # Initialise offsets
         self.offsets = self.get_offsets()
         
+        self.update_neighbours()
+        
+        
+    def update_neighbours(self):
         # Set neighbours
+        
+        for i in range(len(self)):
+            self[i].mines = 0
+        
         for i in range(len(self)):
             neighbours = self.get_neighbours(self.from_linear(i))
             for neighbour in neighbours:
@@ -77,7 +89,7 @@ class Board(NGrid):
         for offset in it.product((-1,0,1), repeat=len(self.size)):
             
             # Test if this is a good offset by checking the number of changes
-            if 0 < sum(map(abs, offset)) <= self.max_adj:
+            if 0 < sum(map(abs, offset)) <= self.adjacency:
                 good_offsets.append(offset)
                 
         return good_offsets
@@ -148,22 +160,63 @@ class Board(NGrid):
     
     def print_(self):
         self.print_nd(lambda t, w: t.__str__(w), 3)
+        
+        
+    def move(self, coord):
+        self[coord].visibility = True
+        self.sweep()
+        
+        
+    def first_move(self, coord):
+        self[coord].is_mine = False
+        for tile in self[coord].neighbours:
+            tile.is_mine = False
+        self.update_neighbours()
+        self.move(coord)
+        
+
+
+
+configs = {
+        'Custom': None,
+        
+        'Easy 2d': {'size':(10,10), 'mine_frac':0.2, 'adjacency':2},
+        'Normal 2d': {'size':(20,15), 'mine_frac':0.25, 'adjacency':2},
+        'Hard 2d': {'size':(25,20), 'mine_frac':0.3, 'adjacency':2},
+        
+        'Easy 4d': {'size':(4,4,3,3), 'mine_frac':0.2, 'adjacency':2},
+        'Normal 4d': {'size':(4,4,4,4), 'mine_frac':0.25, 'adjacency':2},
+        'Hard 4d': {'size':(5,5,4,4), 'mine_frac':0.3, 'adjacency':2},
+        
+        'Easy 4d full': {'size':(4,4,3,3), 'mine_frac':0.05, 'adjacency':4},
+        'Normal 4d full': {'size':(4,4,4,4), 'mine_frac':0.08, 'adjacency':4},
+        'Hard 4d full': {'size':(5,5,4,4), 'mine_frac':0.1, 'adjacency':4},
+    }
+
+functions = {
+        'size': lambda: read_tuple(floor=0, repeat=True),
+        'mine_frac': lambda: read_float(floor=0.0, ceil=1.0, repeat=True),
+        'adjacency': lambda: read_int(floor=0, repeat=True)
+    }
 
 
 
 # TODO make this user friendly
 def play():
     
-    size = read_tuple(floor=0, prompt="Enter the board's dimensions:\n >>> ")
-    upper_bound = tuple(map(lambda x: x-1, size))
+    config = configs[select_one(list(configs), values=configs)]
     
-    adjacency = read_int(floor=1, prompt="Enter offset limit:\n >>> ")
+    if config is None:
+        config = fill(functions)
     
-    mine_frac = read_float(floor=0, ceil=1, prompt="Enter the mine fraction:\n >>> ")
+    board = Board(**config)
     
-    board = Board(size, adjacency, mine_frac)
+    upper_bound = tuple(map(lambda x: x-1, board.size))
+    
+    first_move = True
     
     while True:
+        
         
         board.print_()
         
@@ -171,14 +224,18 @@ def play():
             print('You win')
             break
         
-        move = read_tuple(floor=0, ceil=upper_bound, prompt='Enter a move:\n >>> ')
+        move = read_tuple(floor=0, ceil=upper_bound, prompt='Enter a move:\n >>> ', repeat=True)
+    
+        if first_move:
+            board.first_move(move)
+        else:
+            board.move(move)
+        first_move = False
     
         if board[move].is_mine:
             print('You lose')
             break
     
-        board[move].visibility = True
-        board.sweep()
     
     for i in range(len(board)):
         board[i].visibility = 1

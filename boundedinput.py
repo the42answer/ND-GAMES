@@ -6,7 +6,7 @@ Created on Mon Mar  9 16:34:34 2020
 @author: mike
 """
 
-def read_number(dtype, prompt='', floor=None, ceil=None, repeat=True):
+def read_number(dtype, prompt='', floor=None, ceil=None, repeat=False):
     """ Reads a number within specified bounds. """
     
     while True:
@@ -23,20 +23,60 @@ def read_number(dtype, prompt='', floor=None, ceil=None, repeat=True):
             
         if result is not None or not repeat:
             return result
+        
+
+def select_one(options, values=None, prompt='', repeat=False):
+    index = read_index(options, values, prompt, repeat)
+    return options[index] if index is not None else index
+        
 
 
+# TODO add error handling and repeat support
+def read_index(options, values=None, prompt='', repeat=False):
 
-def read_float(prompt='', floor=None, ceil=None, repeat=True):
+    while True:
+                
+        try:
+            print(prompt)    
+            num_width = len(str(len(options)-1))
+            
+            if values is None:
+                for i in range(len(options)):
+                    print(f'[{i: >{num_width}}] {options[i]}')
+            else:
+                key_width = max(map(len, options))
+                for i in range(len(options)):
+                    print(f'[{i: >{num_width}}] {options[i]: <{key_width}} : {values[options[i]]}')
+                
+            string = input('Enter your choice.\n >>> ')
+            if not string:
+                raise ValueError('Empty string.')
+            if string:
+                result = int(string)
+                
+        except (ValueError, TypeError) as e:
+            print(e)
+            result = None
+            
+        print(result)
+            
+        if result is not None or not repeat:
+            print(result)
+            return result
+    
+
+
+def read_float(prompt='', floor=None, ceil=None, repeat=False):
     return read_number(float, prompt, floor, ceil, repeat)
 
 
 
-def read_int(prompt='', floor=None, ceil=None, repeat=True):
+def read_int(prompt='', floor=None, ceil=None, repeat=False):
     return read_number(int, prompt, floor, ceil, repeat)
 
 
 
-def read_tuple(prompt='', size=None, floor=None, ceil=None, repeat=True):
+def read_tuple(prompt='', size=None, floor=None, ceil=None, repeat=False):
     """ Reads a user speficied tuple with some validation. """
     
     while True:

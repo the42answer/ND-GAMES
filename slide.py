@@ -71,7 +71,7 @@ class Board(NGrid):
 
 def play():
     
-    size = read_tuple(floor=0, prompt="Enter the board's dimensions:\n >>> ")    
+    size = read_tuple(floor=0, prompt="Enter the board's dimensions:\n >>> ", repeat=True)
     board = Board(size)
     
     while True:
@@ -79,7 +79,7 @@ def play():
         board.add_numbers()
         board.print_()
         
-        move = read_int('Enter a move:\n >>> ', floor=-len(board.size), ceil=len(board.size))
+        move = read_int('Enter a move:\n >>> ', floor=-len(board.size), ceil=len(board.size), repeat=True)
         
         # Pass move
         if move == 0:
