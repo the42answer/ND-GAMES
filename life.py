@@ -15,7 +15,10 @@ class Board(AdjGrid):
     def __init__(self, size, adjacency, rules, array=None):
         
         super().__init__(self, size, adjacency, array)
-        
+   
+     
+
+# Life functions: (dims, adjacency, surrounding, state) -> state
 
 configs = {
         'conway': {}
