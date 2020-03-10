@@ -36,15 +36,6 @@ class Board(NGrid):
             index = random.choice(list(empty_indices))
             self[index] = number
             empty_indices.remove(index)
-        
-    
-    def add_numbers_simple(self):
-        amount = random.choice((1,1,2))
-        while amount > 0:
-            index = random.randrange(0,len(self))
-            if self[index] == 0:
-                self[index] = random.choice((2,2,4))
-                amount -= 1
             
             
     def move(self, dimension, increase):

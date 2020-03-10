@@ -6,9 +6,8 @@ Created on Sat Mar  7 19:48:07 2020
 @author: mike
 """
 
-from ngrid import NGrid
+from adjgrid import AdjGrid
 
-import itertools as it
 import random
 from boundedinput import read_tuple, select_one, read_int, read_float
 from editdefaults import fill
@@ -34,13 +33,11 @@ class Tile():
             out = '@' if self.visibility == 2 else '#'
         return f'{out: ^{width}}'
 
-class Board(NGrid):
+class Board(AdjGrid):
     """ An n-dimensional minesweeper board. """
     
     def __init__(self, size, adjacency, mine_frac):
         
-        self.size = size
-        self.adjacency = adjacency
         
         # Determine number of squares
         length = 1
@@ -52,10 +49,8 @@ class Board(NGrid):
             board.append(Tile(random.random()<mine_frac, 0))
         
         # Initialise the NGrid superclass
-        super().__init__(size, board)
+        super().__init__(size, adjacency, board)
         
-        # Initialise offsets
-        self.offsets = self.get_offsets()
         
         self.update_neighbours()
         
@@ -73,51 +68,7 @@ class Board(NGrid):
                 self[i].neighbours.append(neighbour)
                 if neighbour.is_mine:
                     self[i].mines += 1
-    
-    
-    def get_offsets(self):
-        """ Offsets are coordinates holding -1, 0, or 1 in each place.
-            A correct offset must not be all zeros (this points to the same square),
-            and must have a total number of changes (-1 or 1) not greater than
-            the adjacency limt.
-            This function finds all correct offsets. 
-            """
-        
-        good_offsets = []
-        
-        # Iterate over all possible offsets
-        for offset in it.product((-1,0,1), repeat=len(self.size)):
-            
-            # Test if this is a good offset by checking the number of changes
-            if 0 < sum(map(abs, offset)) <= self.adjacency:
-                good_offsets.append(offset)
-                
-        return good_offsets
-    
-    
-    def get_neighbours(self, coord):
-        """ Get all neighbours of a given coordinate.
-            Neighbours are the squares that count for minesweeper adjacency.
-            """
-            
-        neighbours = []
-        
-        # Iterate over all good offsets
-        for offset in self.offsets:
-            
-            # Add the offset to the current coordinate,
-            # and keep any candidate that is actually on the board
-            candidate = list(coord)
-            good_candidate = True
-            for i in range(len(self.size)):
-                candidate[i] += offset[i]
-                if not 0 <= candidate[i] < self.size[i]:
-                    good_candidate = False
-                    break
-            if good_candidate:
-                neighbours.append(candidate)
-                
-        return neighbours
+
             
     
     def sweep(self, update=None):
