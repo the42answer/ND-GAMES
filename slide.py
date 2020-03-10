@@ -9,18 +9,33 @@ Created on Mon Mar  9 15:23:00 2020
 from ngrid import NGrid
 import random
 import itertools as it
-from boundedinput import read_tuple, read_int, read_float
+from boundedinput import read_tuple, read_int, read_float, select_one
 
 class Board(NGrid):
     
-    def __init__(self, size):
+    def __init__(self, size, number_gen):
+        
+        self.number_gen = number_gen
         
         # Fill in the array with zeros. Numbers will be added later.
         super().__init__(size, 0)
         
         
+    # TODO handle lack of space
     def add_numbers(self):
-        self.add_numbers_simple()
+        
+        numbers = self.number_gen()
+        
+        empty_indices = set()
+        
+        for i in range(len(self)):
+            if self[i] == 0:
+                empty_indices.add(i)
+        
+        for number in numbers[:len(empty_indices)]:
+            index = random.choice(list(empty_indices))
+            self[index] = number
+            empty_indices.remove(index)
         
     
     def add_numbers_simple(self):
@@ -66,12 +81,26 @@ class Board(NGrid):
     def print_(self):
         
         self.print_nd(lambda t, w: f'{"." if t==0 else t: ^{w}}', 2)
+        
+        
+number_gens = {
+        'Easy 2s': lambda: 2,
+        'Normal': lambda: random.choice(((2,), (2,), (4,), (2,2))),
+        'Hard': lambda: random.choice(((2,), (2,), (4,), (2,2), (2,4))),
+        '2-type easy': lambda: random.choice(((2,), (3,))),
+        '2-type normal': lambda: random.choice(((2,), (3,), (4,), (2,3))),
+        '3-type easy': lambda: random.choice(((2,), (3,), (5,))),
+        '4-type easy': lambda: random.choice(((2,), (3,), (5,), (7,)))
+    }
  
 
 def play():
     
     size = read_tuple(floor=0, prompt="Enter the board's dimensions:\n >>> ", repeat=True)
-    board = Board(size)
+    
+    number_gen = number_gens[select_one(list(number_gens), values=number_gens, repeat=True)]
+    
+    board = Board(size, number_gen)
     
     while True:
         
